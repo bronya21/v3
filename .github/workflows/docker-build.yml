@@ -1,0 +1,41 @@
+name: Build APK with Docker
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Unzip project
+      run: |
+        unzip -q project.zip -d .
+        ls -la
+    
+    - name: Create buildozer.spec if missing
+      run: |
+        if [ ! -f "buildozer.spec" ]; then
+          echo "[app]" > buildozer.spec
+          echo "title = WAR GUIDE TALK" >> buildozer.spec
+          echo "package.name = warguidetalk" >> buildozer.spec
+          echo "package.domain = org.bronya" >> buildozer.spec
+          echo "source.dir = ." >> buildozer.spec
+          echo "version = 1.0" >> buildozer.spec
+          echo "requirements = python3,kivy" >> buildozer.spec
+          echo "android.minapi = 21" >> buildozer.spec
+          echo "android.sdk = 28" >> buildozer.spec
+          echo "android.ndk = 25b" >> buildozer.spec
+        fi
+    
+    - name: Run Buildozer in Docker
+      run: |
+        docker run --rm -v $(pwd):/app kivy/buildozer android debug
+    
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: APK-File
+        path: bin/*.apk
