@@ -1,4 +1,4 @@
-name: Build APK with Docker
+name: Build APK with P4A
 
 on:
   workflow_dispatch:
@@ -6,36 +6,36 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Unzip project
+    - name: Unzip and prepare
       run: |
         unzip -q project.zip -d .
-        ls -la
-    
-    - name: Create buildozer.spec if missing
+        
+    - name: Install Python-for-Android
       run: |
-        if [ ! -f "buildozer.spec" ]; then
-          echo "[app]" > buildozer.spec
-          echo "title = WAR GUIDE TALK" >> buildozer.spec
-          echo "package.name = warguidetalk" >> buildozer.spec
-          echo "package.domain = org.bronya" >> buildozer.spec
-          echo "source.dir = ." >> buildozer.spec
-          echo "version = 1.0" >> buildozer.spec
-          echo "requirements = python3,kivy" >> buildozer.spec
-          echo "android.minapi = 21" >> buildozer.spec
-          echo "android.sdk = 28" >> buildozer.spec
-          echo "android.ndk = 25b" >> buildozer.spec
-        fi
-    
-    - name: Run Buildozer in Docker
+        sudo apt update
+        sudo apt install -y python3-pip openjdk-11-jdk zlib1g-dev
+        pip3 install python-for-android
+        
+    - name: Build APK
       run: |
-        docker run --rm -v $(pwd):/app kivy/buildozer android debug
-    
+        p4a apk \
+          --private . \
+          --package=org.bronya.warguidetalk \
+          --name="WAR GUIDE TALK" \
+          --version=1.0 \
+          --bootstrap=sdl2 \
+          --requirements=python3,kivy \
+          --android-api=21 \
+          --arch=arm64-v8a \
+          --orientation=portrait
+          
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: APK-File
-        path: bin/*.apk
+        path: dist/*.apk
