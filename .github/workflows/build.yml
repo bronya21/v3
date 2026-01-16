@@ -1,0 +1,32 @@
+name: Build APK
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      
+    - name: 解压 project.zip
+      run: |
+        unzip -q project.zip -d .
+        ls -la
+        
+    - name: 安装环境
+      run: |
+        sudo apt update
+        sudo apt install -y python3-pip openjdk-11-jdk
+        
+    - name: 安装Buildozer
+      run: |
+        pip3 install buildozer cython==0.29.33
+        
+    - name: 构建APK
+      run: buildozer android debug
+      
+    - uses: actions/upload-artifact@v4
+      with:
+        name: APK-Result
+        path: bin/*.apk
